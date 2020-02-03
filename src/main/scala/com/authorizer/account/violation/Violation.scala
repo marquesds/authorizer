@@ -1,4 +1,4 @@
-package com.authorizer.model
+package com.authorizer.account.violation
 
 sealed trait Violation {
   def value: String
@@ -17,7 +17,7 @@ case class DoubledTransaction(value: String = "doubled-transaction") extends Vio
 case class Unknown(value: String = "unknown-violation") extends Violation
 
 object Violation {
-  def parse(value: String): Violation = value match {
+  def apply(value: String): Violation = value match {
     case "account-already-initialized" => AccountAlreadyInitialized()
     case "card-not-active" => CardNotActive()
     case "insufficient-limit" => InsufficientLimit()

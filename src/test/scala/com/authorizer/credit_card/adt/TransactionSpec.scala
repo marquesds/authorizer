@@ -1,4 +1,4 @@
-package com.authorizer.model
+package com.authorizer.credit_card.adt
 
 import java.time.ZonedDateTime
 
@@ -9,13 +9,13 @@ class TransactionSpec extends AsyncWordSpec with Matchers {
 
   val time: ZonedDateTime = ZonedDateTime.now()
 
-  val fixture = new {
-    val transaction: CommonTransaction = CommonTransaction(merchant = "Burger King", amount = 20.0, time = time)
+  val fixtures = new {
+    val transaction: CreditCardTransaction = CreditCardTransaction(merchant = "Burger King", amount = 20.0, time = time)
   }
 
-  "CommonTransaction object" should {
+  "CreditCardTransaction object" should {
     "have same values as the transaction defined fixture" in {
-      val transaction = fixture.transaction
+      val transaction = fixtures.transaction
 
       assert(transaction.merchant === "Burger King")
       assert(transaction.amount === BigDecimal("20.0"))
