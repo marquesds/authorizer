@@ -22,7 +22,9 @@ case class AuthorizationService[F[_] : Monad](accountService: AccountService[F])
   }
 
   def create(accounts: List[Account]): AuthorizationResult = {
-    val creationViolations = Set.empty ++ AuthorizationRule.accountNotInitializedRule(accounts) ++ AuthorizationRule.accountAlreadyInitializedRule(accounts)
+    val creationViolations = Set.empty ++
+      AuthorizationRule.accountNotInitializedRule(accounts) ++
+      AuthorizationRule.accountAlreadyInitializedRule(accounts)
     if (accounts.isEmpty) AuthorizationResult(None, creationViolations) else AuthorizationResult(accounts.headOption, creationViolations)
   }
 
