@@ -1,6 +1,5 @@
 package com.authorizer.credit_card.service.algebra
 
-import cats.Id
 import com.authorizer.account.violation.{Unknown, Violation}
 import com.authorizer.credit_card.adt.CreditCardAccount
 import org.scalatest.matchers.should.Matchers
@@ -10,7 +9,7 @@ class AccountServiceSpec extends AsyncWordSpec with Matchers {
 
   val fixtures = new {
     val account: CreditCardAccount = CreditCardAccount(activeCard = true, availableLimit = 100)
-    val service: AccountService[Id, Unit] = AccountService[Id, Unit](account)
+    val service: AccountService = AccountService()(account)
   }
 
   "AccountService" should {

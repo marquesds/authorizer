@@ -1,8 +1,7 @@
 package com.authorizer.account.service.algebra
 
-import com.authorizer.account.adt.{Account, Transaction}
-import com.authorizer.credit_card.adt.TransactionResult
+import com.authorizer.account.adt.{Account, AuthorizationResult, Transaction}
 
 trait AuthorizationServiceAlgebra[F[_], B] {
-  def authorize(account: Account, transaction: Transaction): F[TransactionResult]
+  def authorize(accounts: List[Account], transactions: List[Transaction]): F[AuthorizationResult]
 }

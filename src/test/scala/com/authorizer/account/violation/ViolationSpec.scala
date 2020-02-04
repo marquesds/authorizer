@@ -6,6 +6,13 @@ import org.scalatest.wordspec.AsyncWordSpec
 class ViolationSpec extends AsyncWordSpec with Matchers {
 
   "Violation" should {
+    "return AccountNotInitialized object when receive an account-not-initialized value" in {
+      val violation = Violation("account-not-initialized")
+
+      assert(violation.isInstanceOf[AccountNotInitialized])
+      assert(violation.value === "account-not-initialized")
+    }
+
     "return AccountAlreadyInitialized object when receive an account-already-initialized value" in {
       val violation = Violation("account-already-initialized")
 
