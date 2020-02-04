@@ -35,7 +35,7 @@ case class AuthorizationService[F[_] : Monad](accountService: AccountService[F])
       accountService.process(account.asInstanceOf[CreditCardAccount], transactions.head, violations).flatMap { result =>
         result.account.map { account =>
           processTransactions(account, transactions.tail, result.violations)
-        }.getOrElse(result)
+        }.getOrElse(Monad[F].pure(result))
       }
     }
   }
