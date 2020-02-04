@@ -8,23 +8,25 @@ import com.authorizer.credit_card.adt.CreditCardAccount
 
 import scala.math.BigDecimal
 
-case class AccountService[F[_] : Monad](account: CreditCardAccount) extends AccountServiceAlgebra[F, Unit] {
+case class AccountService[F[_] : Monad]() extends AccountServiceAlgebra[F, CreditCardAccount, Unit] {
 
-  def process(transaction: Transaction, violations: Set[Violation] = Set.empty): F[AuthorizationResult] = {
-    val subtractResult: Either[Violation, Account] = subtract(transaction.amount)
+  def process(account: CreditCardAccount, transaction: Transaction, violations: Set[Violation] = Set.empty): F[AuthorizationResult] = {
+    val subtractResult: Either[Violation, Account] = subtract(account, transaction.amount)
 
-    val composedViolations: Set[Violation] = violations ++ CreditCardRule.cardActiveRule(isCardActive) ++ CreditCardRule.availableLimitRule(subtractResult)
+    val composedViolations: Set[Violation] = violations ++
+      CreditCardRule.cardActiveRule(isCardActive(account)) ++
+      CreditCardRule.availableLimitRule(subtractResult)
 
     val accountWithNewValue = if (composedViolations.isEmpty) subtractResult.getOrElse(account) else account
     Monad[F].pure(AuthorizationResult(Some(accountWithNewValue), composedViolations))
   }
 
-  def subtract(amount: BigDecimal): Either[Violation, Account] = {
+  def subtract(account: CreditCardAccount, amount: BigDecimal): Either[Violation, Account] = {
     val result = account.availableLimit - amount
     if (result >= 0) Right(account.copy(availableLimit = result)) else Left(Violation("insufficient-limit"))
   }
 
-  def isCardActive: Boolean = account.activeCard
+  def isCardActive(account: CreditCardAccount): Boolean = account.activeCard
 }
 
 object CreditCardRule {
