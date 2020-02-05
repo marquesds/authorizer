@@ -122,6 +122,18 @@ class AccountServiceSpec extends AsyncWordSpec with Matchers {
         assert(result.account.get.availableLimit === BigDecimal("15"))
         assert(result.violations === Set(Violation("insufficient-limit")))
       }
+
+      "process method has been called with an external violation" in {
+        val account = fixtures.account
+        val transaction = fixtures.transaction
+        val service = fixtures.service
+
+        val result = service.process(account, transaction, Set(Violation("high-frequency-small-interval")))
+
+        assert(result.account.get.activeCard === true)
+        assert(result.account.get.availableLimit === BigDecimal("100"))
+        assert(result.violations === Set(Violation("high-frequency-small-interval")))
+      }
     }
   }
 

@@ -12,12 +12,12 @@ case class AuthorizationService[F[_] : Monad](accountService: AccountService[F])
 
   val violations: Set[Violation] = Set.empty
 
-  def authorize(accounts: List[Account], transactions: List[Transaction]): F[AuthorizationResult] = {
+  def authorize(accounts: List[Account], transactions: List[Transaction]): F[List[AuthorizationResult]] = {
     val creationResult = create(accounts)
 
     creationResult.account match {
       case Some(account) => processTransactions(account, transactions, creationResult.violations)
-      case _ => Monad[F].pure(creationResult)
+      case _ => Monad[F].pure(List(creationResult))
     }
   }
 
@@ -28,14 +28,19 @@ case class AuthorizationService[F[_] : Monad](accountService: AccountService[F])
     if (accounts.isEmpty) AuthorizationResult(None, creationViolations) else AuthorizationResult(accounts.headOption, creationViolations)
   }
 
-  def processTransactions(account: Account, transactions: List[Transaction], violations: Set[Violation]): F[AuthorizationResult] = {
+  def processTransactions(
+    account: Account,
+    transactions: List[Transaction],
+    violations: Set[Violation],
+    results: List[AuthorizationResult] = List.empty
+  ): F[List[AuthorizationResult]] = {
     if (transactions.isEmpty) {
-      Monad[F].pure(AuthorizationResult(Some(account), violations))
+      Monad[F].pure(results)
     } else {
       accountService.process(account.asInstanceOf[CreditCardAccount], transactions.head, violations).flatMap { result =>
         result.account.map { account =>
-          processTransactions(account, transactions.tail, result.violations)
-        }.getOrElse(Monad[F].pure(result))
+          processTransactions(account, transactions.tail, result.violations, results :+ result)
+        }.getOrElse(Monad[F].pure(results))
       }
     }
   }
