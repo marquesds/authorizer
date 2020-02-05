@@ -2,12 +2,10 @@ package com.authorizer.credit_card.service.algebra
 
 import cats.Monad
 import cats.implicits._
-
 import com.authorizer.account.adt.{Account, AuthorizationResult, Transaction}
 import com.authorizer.account.service.algebra.AuthorizationServiceAlgebra
 import com.authorizer.account.violation.Violation
 import com.authorizer.credit_card.adt.CreditCardAccount
-
 import com.authorizer.shared.rich.RichZonedDateTime._
 
 case class AuthorizationService[F[_] : Monad](accountService: AccountService[F]) extends AuthorizationServiceAlgebra[F, Unit] {
@@ -31,19 +29,16 @@ case class AuthorizationService[F[_] : Monad](accountService: AccountService[F])
     if (accounts.isEmpty) AuthorizationResult(None, creationViolations) else AuthorizationResult(accounts.headOption, creationViolations)
   }
 
-  def processTransactions(
-    account: Account,
-    transactions: List[Transaction],
-    violations: Set[Violation],
-    results: List[AuthorizationResult] = List.empty
-  ): F[List[AuthorizationResult]] = {
+  def processTransactions(account: Account, transactions: List[Transaction], violations: Set[Violation] = Set.empty,
+    results: List[AuthorizationResult] = List.empty, throttling: List[Violation] = List.empty): F[List[AuthorizationResult]] = {
     if (transactions.isEmpty) {
       Monad[F].pure(results)
     } else {
       accountService.process(account.asInstanceOf[CreditCardAccount], transactions.head, violations).flatMap { result =>
         result.account.map { account =>
-          val violations = Set.empty ++ AuthorizationRule.doubledTransactionRule(transactions.head, transactions.tail)
-          processTransactions(account, transactions.tail, violations, results :+ result)
+          val throttlingAcc = AuthorizationRule.accountAlreadyInitializedRule(transactions.head, transactions.tail, throttling)
+          val violations = Set.empty ++ AuthorizationRule.doubledTransactionRule(transactions.head, transactions.tail) ++ throttlingAcc._1
+          processTransactions(account, transactions.tail, violations, results :+ result, throttlingAcc._2)
         }.getOrElse(Monad[F].pure(results))
       }
     }
@@ -52,11 +47,10 @@ case class AuthorizationService[F[_] : Monad](accountService: AccountService[F])
 
 object AuthorizationRule {
 
-  def accountNotInitializedRule(accounts: List[Account]): Option[Violation] =
-    if (accounts.isEmpty) Some(Violation("account-not-initialized")) else None
+  def accountNotInitializedRule(accounts: List[Account]): Option[Violation] = if (accounts.isEmpty) Some(Violation("account-not-initialized")) else None
 
-  def accountAlreadyInitializedRule(accounts: List[Account]): Option[Violation] =
-    if (accounts.length > 1) Some(Violation("account-already-initialized")) else None
+  def accountAlreadyInitializedRule(
+    accounts: List[Account]): Option[Violation] = if (accounts.length > 1) Some(Violation("account-already-initialized")) else None
 
   def doubledTransactionRule(transaction: Transaction, transactions: List[Transaction]): Option[Violation] = {
     transactions.headOption.flatMap { secondTransaction =>
@@ -66,4 +60,15 @@ object AuthorizationRule {
       if (areTransactionsEqual && difference <= 120) Some(Violation("doubled-transaction")) else None
     }
   }
+
+  def accountAlreadyInitializedRule(transaction: Transaction, transactions: List[Transaction],
+    violations: List[Violation] = List.empty): (Option[Violation], List[Violation]) = {
+    transactions.headOption.flatMap { secondTransaction =>
+      val difference = (transaction.time.toSeconds - secondTransaction.time.toSeconds).abs
+      val violationsAcc = if (difference <= 120) violations :+ Violation("high-frequency-small-interval") else violations
+
+      val result = if (violationsAcc.length > 2) (Some(Violation("high-frequency-small-interval")), List.empty[Violation]) else (None, violationsAcc)
+      Some(result)
+    }
+    }.getOrElse((None, List.empty))
 }

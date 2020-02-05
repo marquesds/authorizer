@@ -11,16 +11,17 @@ import org.scalatest.wordspec.AsyncWordSpec
 
 case class AuthorizationServiceSpec() extends AsyncWordSpec with Matchers {
 
+  val zoneId = ZoneId.of("UTC")
   val now: ZonedDateTime = ZonedDateTime.now()
 
   val fixtures = new {
     val accounts: List[CreditCardAccount] = List(CreditCardAccount(activeCard = true, availableLimit = 200))
     val transactions: List[CreditCardTransaction] = List(
-      CreditCardTransaction("Submarino", 10, now),
-      CreditCardTransaction("Burger King", 30, now),
-      CreditCardTransaction("Amazon", 10, now),
-      CreditCardTransaction("DigitalOcean", 70, now),
-      CreditCardTransaction("C&A", 80, now))
+      CreditCardTransaction("Submarino", 10, ZonedDateTime.of(2020, 2, 4, 12, 25, 0, 0, zoneId)),
+      CreditCardTransaction("Burger King", 30, ZonedDateTime.of(2020, 2, 4, 12, 30, 0, 0, zoneId)),
+      CreditCardTransaction("Amazon", 10, ZonedDateTime.of(2020, 2, 4, 12, 35, 0, 0, zoneId)),
+      CreditCardTransaction("DigitalOcean", 70, ZonedDateTime.of(2020, 2, 4, 12, 40, 0, 0, zoneId)),
+      CreditCardTransaction("C&A", 80, ZonedDateTime.of(2020, 2, 4, 12, 45, 0, 0, zoneId)))
     val accountService: AccountService[Id] = AccountService()
     val service: AuthorizationService[Id] = AuthorizationService(accountService)
   }
@@ -176,12 +177,11 @@ case class AuthorizationServiceSpec() extends AsyncWordSpec with Matchers {
 
       "doubled transactions" in {
         val accounts = fixtures.accounts
-        val zoneId = ZoneId.of("UTC")
 
         val transactions = List(
           CreditCardTransaction("Amazon", 10, ZonedDateTime.of(2020, 2, 4, 12, 20, 0, 0, zoneId)),
           CreditCardTransaction("Amazon", 10, ZonedDateTime.of(2020, 2, 4, 12, 21, 0, 0, zoneId)),
-          CreditCardTransaction("Burger King", 30, ZonedDateTime.of(2020, 2, 4, 12, 21, 0, 0, zoneId))
+          CreditCardTransaction("Burger King", 30, ZonedDateTime.of(2020, 2, 4, 12, 25, 0, 0, zoneId))
         )
         val service = fixtures.service
 
@@ -203,6 +203,42 @@ case class AuthorizationServiceSpec() extends AsyncWordSpec with Matchers {
         assert(result3.account.get.activeCard === true)
         assert(result3.account.get.availableLimit === BigDecimal("160"))
         assert(result3.violations === Set.empty[Violation])
+      }
+
+      "high frequency with small interval transactions" in {
+        val accounts = fixtures.accounts
+
+        val transactions = List(
+          CreditCardTransaction("DigitalOcean", 80, ZonedDateTime.of(2020, 2, 4, 12, 20, 0, 0, zoneId)),
+          CreditCardTransaction("Amazon", 30, ZonedDateTime.of(2020, 2, 4, 12, 21, 0, 0, zoneId)),
+          CreditCardTransaction("Burger King", 25, ZonedDateTime.of(2020, 2, 4, 12, 21, 0, 0, zoneId)),
+          CreditCardTransaction("C&A", 5, ZonedDateTime.of(2020, 2, 4, 12, 21, 0, 0, zoneId))
+        )
+        val service = fixtures.service
+
+        val results = service.authorize(accounts, transactions)
+        val result1 = results(0)
+        val result2 = results(1)
+        val result3 = results(2)
+        val result4 = results(3)
+
+        assert(results.length === 4)
+
+        assert(result1.account.get.activeCard === true)
+        assert(result1.account.get.availableLimit === BigDecimal("120"))
+        assert(result1.violations === Set.empty[Violation])
+
+        assert(result2.account.get.activeCard === true)
+        assert(result2.account.get.availableLimit === BigDecimal("90"))
+        assert(result2.violations === Set.empty[Violation])
+
+        assert(result3.account.get.activeCard === true)
+        assert(result3.account.get.availableLimit === BigDecimal("65"))
+        assert(result3.violations === Set.empty[Violation])
+
+        assert(result4.account.get.activeCard === true)
+        assert(result4.account.get.availableLimit === BigDecimal("65"))
+        assert(result4.violations === Set(Violation("high-frequency-small-interval")))
       }
     }
   }
