@@ -3,7 +3,7 @@ package com.authorizer.credit_card.service.algebra
 import java.time.ZonedDateTime
 
 import cats.Id
-import com.authorizer.account.adt.{Account, AuthorizationResult, CreditCardTransaction}
+import com.authorizer.account.adt.{Account, CreditCardTransaction}
 import com.authorizer.account.violation.Violation
 import com.authorizer.credit_card.adt.CreditCardAccount
 import org.scalatest.matchers.should.Matchers
