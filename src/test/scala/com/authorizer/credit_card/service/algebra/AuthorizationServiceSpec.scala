@@ -1,6 +1,6 @@
 package com.authorizer.credit_card.service.algebra
 
-import java.time.ZonedDateTime
+import java.time.{ZonedDateTime, ZoneId}
 
 import cats.Id
 import com.authorizer.account.adt.{Account, CreditCardTransaction}
@@ -172,6 +172,37 @@ case class AuthorizationServiceSpec() extends AsyncWordSpec with Matchers {
 
         val results = service.authorize(accounts, transactions)
         assert(results.head.violations === Set(Violation("account-not-initialized")))
+      }
+
+      "doubled transactions" in {
+        val accounts = fixtures.accounts
+        val zoneId = ZoneId.of("UTC")
+
+        val transactions = List(
+          CreditCardTransaction("Amazon", 10, ZonedDateTime.of(2020, 2, 4, 12, 20, 0, 0, zoneId)),
+          CreditCardTransaction("Amazon", 10, ZonedDateTime.of(2020, 2, 4, 12, 21, 0, 0, zoneId)),
+          CreditCardTransaction("Burger King", 30, ZonedDateTime.of(2020, 2, 4, 12, 21, 0, 0, zoneId))
+        )
+        val service = fixtures.service
+
+        val results = service.authorize(accounts, transactions)
+        val result1 = results(0)
+        val result2 = results(1)
+        val result3 = results(2)
+
+        assert(results.length === 3)
+
+        assert(result1.account.get.activeCard === true)
+        assert(result1.account.get.availableLimit === BigDecimal("190"))
+        assert(result1.violations === Set.empty[Violation])
+
+        assert(result2.account.get.activeCard === true)
+        assert(result2.account.get.availableLimit === BigDecimal("190"))
+        assert(result2.violations === Set(Violation("doubled-transaction")))
+
+        assert(result3.account.get.activeCard === true)
+        assert(result3.account.get.availableLimit === BigDecimal("160"))
+        assert(result3.violations === Set.empty[Violation])
       }
     }
   }

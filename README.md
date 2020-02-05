@@ -6,4 +6,4 @@ Account transactions authorizer.
 
 ## Documentation
 
-  - [Problem Description](docs/problem_description.md)
+  - [Code Challenge Description](docs/code_challenge_description.md)
