@@ -12,7 +12,7 @@ object JsonParser {
   }
 
   def fromKey(json: Json, key: String): Option[Json] = {
-    json.hcursor.downField("account").as[Json] match {
+    json.hcursor.downField(key).as[Json] match {
       case Right(value) => Some(value)
       case Left(_) => None
     }

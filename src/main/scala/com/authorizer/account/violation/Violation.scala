@@ -2,6 +2,8 @@ package com.authorizer.account.violation
 
 sealed trait Violation {
   def value: String
+
+  override def toString: String = value
 }
 
 case class AccountNotInitialized(value: String = "account-not-initialized") extends Violation
