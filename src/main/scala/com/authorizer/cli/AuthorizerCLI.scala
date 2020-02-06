@@ -6,7 +6,6 @@ import com.authorizer.cli.model.{AccountJson, AuthorizationResultJson, Transacti
 import com.authorizer.credit_card.adt.CreditCardAccount
 import com.authorizer.credit_card.service.algebra.{AccountService, AuthorizationService}
 import io.circe.syntax._
-import io.circe.generic.auto._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
