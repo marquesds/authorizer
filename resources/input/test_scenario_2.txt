@@ -1,0 +1,3 @@
+{"transaction": {"merchant": "Burger King", "amount": 20, "time": "2019-02-13T10:00:00.000Z"}}
+{"transaction": {"merchant": "Amazon", "amount": 40, "time": "2019-02-13T11:00:00.000Z"}}
+{"transaction": {"merchant": "Submario", "amount": 40, "time": "2019-02-13T12:00:00.000Z"}}

@@ -12,7 +12,12 @@ $ sbt "run resources/input/account_transactions.txt"
 
 ## Running on a Docker container
 
-## Running the unit and integration tests
+## Running unit tests
 ```shell
 $ sbt test
+```
+
+## Running integration tests
+```shell
+$ sbt it:test
 ```
