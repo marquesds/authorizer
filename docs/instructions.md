@@ -1,4 +1,4 @@
-## Running with the buit-in jar
+## Running with the built-in jar
 ```shell
 $ java -jar authorizer.jar authorizer FILENAME
 ```
