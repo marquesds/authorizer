@@ -12,16 +12,12 @@ import scala.concurrent.Future
 
 object AuthorizerCLI extends App {
 
-  println("opaaa, to aqui")
-
   val accountService = AccountService[Future]()
   val service = AuthorizationService[Future](accountService)
 
   val accounts: List[CreditCardAccount] = args.map { value =>
     JsonParser.fromString(value) match {
-      case Some(value) =>
-        println(value)
-        JsonParser.fromKey(value, "account").get.asJson.as[AccountJson] match {
+      case Some(value) => JsonParser.fromKey(value, "account").get.asJson.as[AccountJson] match {
           case Right(accountJson) => accountJson.asInstanceOf[CreditCardAccount]
           case Left(_) => None
         }
