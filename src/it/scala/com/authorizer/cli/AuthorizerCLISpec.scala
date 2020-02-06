@@ -14,6 +14,7 @@ case class AuthorizerCLISpec() extends AsyncWordSpec with Matchers {
     val testScenario5 = "resources/input/test_scenario_5.txt"
     val testScenario6 = "resources/input/test_scenario_6.txt"
     val testScenario7 = "resources/input/test_scenario_7.txt"
+    val testScenario8 = "resources/input/test_scenario_8.txt"
   }
 
   "AuthorizerCLISpec" should {
@@ -134,6 +135,38 @@ case class AuthorizerCLISpec() extends AsyncWordSpec with Matchers {
         assert(result3.account.get.activeCard === true)
         assert(result3.account.get.availableLimit === BigDecimal("40"))
         assert(result3.violations === Set.empty[Violation])
+      }
+
+      "receives multiple violations (high frequency small interval and insufficient limit)" in {
+        val result = AuthorizerCLI.authorize(fixtures.testScenario8)
+
+        val result1 = result(0)
+        val result2 = result(1)
+        val result3 = result(2)
+        val result4 = result(3)
+        val result5 = result(4)
+
+        assert(result.length === 5)
+
+        assert(result1.account.get.activeCard === true)
+        assert(result1.account.get.availableLimit === BigDecimal("80"))
+        assert(result1.violations === Set.empty[Violation])
+
+        assert(result2.account.get.activeCard === true)
+        assert(result2.account.get.availableLimit === BigDecimal("40"))
+        assert(result2.violations === Set.empty[Violation])
+
+        assert(result3.account.get.activeCard === true)
+        assert(result3.account.get.availableLimit === BigDecimal("10"))
+        assert(result3.violations === Set.empty[Violation])
+
+        assert(result4.account.get.activeCard === true)
+        assert(result4.account.get.availableLimit === BigDecimal("10"))
+        assert(result4.violations === Set(Violation("high-frequency-small-interval").toString))
+
+        assert(result5.account.get.activeCard === true)
+        assert(result5.account.get.availableLimit === BigDecimal("10"))
+        assert(result5.violations === Set(Violation("insufficient-limit").toString))
       }
     }
   }

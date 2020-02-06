@@ -1,0 +1,6 @@
+{"account": {"active-card": true, "available-limit": 100}}
+{"transaction": {"merchant": "Burger King", "amount": 20, "time": "2019-02-13T10:01:00.000Z"}}
+{"transaction": {"merchant": "Amazon", "amount": 40, "time": "2019-02-13T10:01:20.000Z"}}
+{"transaction": {"merchant": "Americanas", "amount": 30, "time": "2019-02-13T10:01:45.000Z"}}
+{"transaction": {"merchant": "C&A", "amount": 10, "time": "2019-02-13T10:01:59.000Z"}}
+{"transaction": {"merchant": "Netflix", "amount": 30, "time": "2019-02-13T11:10:30.000Z"}}
